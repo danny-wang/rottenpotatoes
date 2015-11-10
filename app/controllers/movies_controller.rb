@@ -12,9 +12,12 @@ class MoviesController < ApplicationController
 
   def index
     @sort_by = params[:sort_by]
-    if @sort_by == "release_date"
+    if @sort_by
+      session[:sort_by]=@sort_by
+    end
+    if session[:sort_by] == "release_date"
       query = Movie.order(:release_date)
-    elsif @sort_by == "title"
+    elsif session[:sort_by] == "title"
       query = Movie.order(:title)
     else
       query = Movie
@@ -22,8 +25,13 @@ class MoviesController < ApplicationController
     
     @all_ratings = Movie.ratings
     if  !params[:ratings].nil?
+      session[:ratings]=params[:ratings].map { |r| r[0] }
       @ratings = params[:ratings].map { |r| r[0] }
-      @movies = query.where(rating: @ratings)
+      @movies = query.where(rating: session[:ratings])
+    elsif session[:ratings]
+      @ratings =session[:ratings]
+      @movies = query.where(rating: session[:ratings])
+      
     else
       @movies = query.all
     end
@@ -49,6 +57,12 @@ class MoviesController < ApplicationController
     flash[:notice] = "#{@movie.title} was successfully updated."
     redirect_to movie_path(@movie)
   end
+  def search_tmdb
+    #hardwire to simulate failure
+    flash[:warning]="'#{params[:search_terms]}' was not found in TMDb."
+    redirect_to movies_path
+  end
+  
 
   def destroy
     @movie = Movie.find(params[:id])
